@@ -40,7 +40,6 @@ jobs:
 
       - name: Run pylint and produce report
         run: |
-          set -o pipefail
           pylint . --recursive=y --fail-under=8.0 --ignore=.venv | tee pylint_log.txt
         continue-on-error: true
 
@@ -49,3 +48,8 @@ jobs:
         with:
           name: pylint-logging
           path: pylint_log.txt
+
+      - name: Fail job if pylint score was too low
+        run: |
+          set -o pipefail
+          pylint . --recursive=y --fail-under=8.0 --ignore=.venv >/dev/null
