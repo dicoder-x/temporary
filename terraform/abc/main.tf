@@ -2,7 +2,7 @@ provider "aws" {
   region = "eu-west-2"
 }
 
-resource "aws_s3_bucket" "workflow_testing" {
+resource "aws_s3_bucket" "workflow-testing" {
   bucket  = "workflow_testing"
   force_destroy = true
   tags    = {
@@ -12,14 +12,14 @@ resource "aws_s3_bucket" "workflow_testing" {
 }
 
 resource "aws_s3_bucket_versioning" "workflow_testing_versioning" {
-  bucket = aws_s3_bucket.workflow_testing.id
+  bucket = aws_s3_bucket.workflow-testing.id
   versioning_configuration {
     status = "Enabled" 
   }
 }
 
 resource "aws_s3_bucket_public_access_block" "workflow_testing_block_public" {
-  bucket = aws_s3_bucket.workflow_testing.id
+  bucket = aws_s3_bucket.workflow-testing.id
 
   block_public_acls       = true
   block_public_policy     = true
@@ -29,7 +29,7 @@ resource "aws_s3_bucket_public_access_block" "workflow_testing_block_public" {
 
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "workflow_testing_encryption" {
-  bucket = aws_s3_bucket.workflow_testing.id
+  bucket = aws_s3_bucket.workflow-testing.id
   rule {
     apply_server_side_encryption_by_default {
       sse_algorithm = "AES256"
@@ -48,8 +48,8 @@ data "aws_iam_policy_document" "deny_insecure_transport" {
       identifiers = ["*"]
     }
     resources = [
-      aws_s3_bucket.workflow_testing.arn,
-      "${aws_s3_bucket.workflow_testing.arn}/*"
+      aws_s3_bucket.workflow-testing.arn,
+      "${aws_s3_bucket.workflow-testing.arn}/*"
     ]
     condition {
       test     = "Bool"
@@ -60,14 +60,14 @@ data "aws_iam_policy_document" "deny_insecure_transport" {
 }
 
 resource "aws_s3_bucket_policy" "workflow_testing_policy" {
-  bucket = aws_s3_bucket.workflow_testing.id
+  bucket = aws_s3_bucket.workflow-testing.id
   policy = data.aws_iam_policy_document.deny_insecure_transport.json
 }
 
 output "workflow_testing_bucket_name" {
-  value = aws_s3_bucket.workflow_testing
+  value = aws_s3_bucket.workflow-testing
 }
 
 output "workflow_testing_bucket_arn" {
-  value = aws_s3_bucket.workflow_testing
+  value = aws_s3_bucket.workflow-testing
 }
