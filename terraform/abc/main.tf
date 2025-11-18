@@ -3,7 +3,7 @@ provider "aws" {
 }
 
 resource "aws_s3_bucket" "workflow_testing" {
-  bucket  = "workflow-testing"
+  bucket  = "temporary-repo-abc-workflow-testing"
   force_destroy = true
   tags    = {
 	Name  = "workflow-testing"
