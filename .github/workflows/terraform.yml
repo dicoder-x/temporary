@@ -20,12 +20,36 @@ jobs:
       - name: Detect changes in Terraform directories
         id: filter
         run: |
-          changed_files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^terraform/' || true)
+          before="${{ github.event.before }}"
+          sha="${{ github.sha }}"
 
-          changed_dirs=$(echo "$changed_files" | awk -F'/' '{print $1"/"$2}' | sort -u | jq -R . | jq -s .)
+          echo "Before: $before"
+          echo "SHA: $sha"
 
-          echo "Changed Terraform directories: $changed_dirs"
-          echo "changed_dirs=$changed_dirs" >> $GITHUB_OUTPUT
+          # Handle first commit case
+          if [[ "$before" == "0000000000000000000000000000000000000000" ]]; then
+            changed_files=$(git ls-files | grep '^terraform/' || true)
+          else
+            # Prevent crash if commit isn't in local checkout
+            if ! git cat-file -e "$before" 2>/dev/null; then
+              echo "Previous commit not in checkout. Fetching full history..."
+              git fetch --unshallow || git fetch --all
+            fi
+
+            changed_files=$(git diff --name-only "$before" "$sha" | grep '^terraform/' || true)
+          fi
+
+          # If no Terraform files changed
+          if [[ -z "$changed_files" ]]; then
+            echo "changed_dirs=[]" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Build directory list
+          dirs=$(echo "$changed_files" | awk -F'/' '{print $1"/"$2}' | sort -u | jq -R . | jq -s .)
+
+          echo "Changed Terraform directories: $dirs"
+          echo "changed_dirs=$dirs" >> $GITHUB_OUTPUT
 
   terraform:
     needs: detect-changes
@@ -51,8 +75,8 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID}}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-access-key-id: ${{ secrets.ACCESS_KEY_ID}}
+          aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
           aws-region: eu-west-2
       
       - name: Plan Terraform
@@ -63,6 +87,5 @@ jobs:
       - name: Apply Terraform
         if: github.ref == 'refs/heads/main'
         run: |
-          terraform init
           terraform apply -auto-approve tfplan
 
