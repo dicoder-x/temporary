@@ -46,7 +46,7 @@ jobs:
           fi
 
           # Build directory list
-          dirs=$(echo "$changed_files" | awk -F'/' '{print $1"/"$2}' | sort -u | jq -R . | jq -s .)
+          dirs=$(echo "$changed_files" | awk -F'/' '{print $1"/"$2}' | sort -u | jq -R . | jq -sc .)
 
           echo "Changed Terraform directories: $dirs"
           echo "changed_dirs=$(echo "$dirs" | jq -c .)" >> "$GITHUB_OUTPUT"
