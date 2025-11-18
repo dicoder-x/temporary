@@ -2,11 +2,11 @@ provider "aws" {
   region = "eu-west-2"
 }
 
-resource "aws_s3_bucket" "testing" {
-  bucket  = "testing"
+resource "aws_s3_bucket" "workflow_testing" {
+  bucket  = "workflow_testing"
   force_destroy = true
   tags    = {
-	Name  = "testing"
+	Name  = "workflow_testing"
     Environment = "Production"
   }
 }
