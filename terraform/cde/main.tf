@@ -34,8 +34,8 @@ resource "aws_iam_role_policy" "cde-testing-glue-crawler-policy" {
           "s3:ListBucket"
         ]
         Resource = [
-          var.BUCKET_ARN,
-          "${var.BUCKET_ARN}/*"
+          "arn:aws:s3:::${var.BUCKET_NAME}",
+          "arn:aws:s3:::${var.BUCKET_NAME}/*"
         ]
       },
       {
@@ -58,7 +58,7 @@ resource "aws_glue_crawler" "cde-testing-crawler" {
   role         = aws_iam_role.cde-testing-glue-crawler-role.arn
 
   s3_target {
-    path = var.BUCKET_ARN
+    path = "s3://${var.BUCKET_NAME}"
     }
   # Optional schedule, can be run on-demand by Lambda
   # schedule = "cron(* * * * ? *)"
