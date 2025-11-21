@@ -1,0 +1,75 @@
+resource "aws_glue_catalog_database" "goalposting-db" {
+  name = var.GLUE_DB_NAME
+}
+
+resource "aws_iam_role" "goalposting-glue-crawler-role" {
+  name = "goalposting-glue-crawler-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "glue.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "goalposting-glue-crawler-policy" {
+  name = "goalposting-glue-crawler-policy"
+  role = aws_iam_role.goalposting-glue-crawler-role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          var.BUCKET_ARN,
+          "${var.BUCKET_ARN}/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "glue:*",
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_glue_crawler" "goalposting-crawler" {
+  name         = var.CRAWLER_NAME
+  database_name = aws_glue_catalog_database.goalposting-db.name
+  role         = aws_iam_role.goalposting-glue-crawler-role.arn
+
+  s3_target {
+    path = var.BUCKET_ARN
+    }
+  # Optional schedule, can be run on-demand by Lambda
+  # schedule = "cron(* * * * ? *)"
+  configuration = jsonencode({
+    Version = 1.0
+    CrawlerOutput = {
+      Tables = {}
+    }
+  })
+  schema_change_policy {
+    update_behavior = "UPDATE_IN_DATABASE"
+    delete_behavior = "DEPRECATE_IN_DATABASE"
+  }
+}
