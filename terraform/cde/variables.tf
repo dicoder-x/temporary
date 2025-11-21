@@ -1,7 +1,7 @@
 variable "CRAWLER_NAME" {
     type        = string
     description = "Name of the glue crawler"
-    default     = "goalposting-crawler"
+    default     = "cde-testing-crawler"
 }
 
 variable "BUCKET_ARN" {
@@ -13,5 +13,5 @@ variable "BUCKET_ARN" {
 variable "GLUE_DB_NAME" {
     type        = string
     description = "Name of the glue database"
-    default     = "goalposting-db"
+    default     = "cde-testing-db"
 }
