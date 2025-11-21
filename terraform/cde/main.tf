@@ -1,9 +1,9 @@
-resource "aws_glue_catalog_database" "goalposting-db" {
+resource "aws_glue_catalog_database" "cde-testing-db" {
   name = var.GLUE_DB_NAME
 }
 
-resource "aws_iam_role" "goalposting-glue-crawler-role" {
-  name = "goalposting-glue-crawler-role"
+resource "aws_iam_role" "cde-testing-glue-crawler-role" {
+  name = "cde-testing-glue-crawler-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -19,9 +19,9 @@ resource "aws_iam_role" "goalposting-glue-crawler-role" {
   })
 }
 
-resource "aws_iam_role_policy" "goalposting-glue-crawler-policy" {
-  name = "goalposting-glue-crawler-policy"
-  role = aws_iam_role.goalposting-glue-crawler-role.id
+resource "aws_iam_role_policy" "cde-testing-glue-crawler-policy" {
+  name = "cde-testing-glue-crawler-policy"
+  role = aws_iam_role.cde-testing-glue-crawler-role.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -52,10 +52,10 @@ resource "aws_iam_role_policy" "goalposting-glue-crawler-policy" {
   })
 }
 
-resource "aws_glue_crawler" "goalposting-crawler" {
+resource "aws_glue_crawler" "cde-testing-crawler" {
   name         = var.CRAWLER_NAME
-  database_name = aws_glue_catalog_database.goalposting-db.name
-  role         = aws_iam_role.goalposting-glue-crawler-role.arn
+  database_name = aws_glue_catalog_database.cde-testing-db.name
+  role         = aws_iam_role.cde-testing-glue-crawler-role.arn
 
   s3_target {
     path = var.BUCKET_ARN
