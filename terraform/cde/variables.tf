@@ -4,10 +4,10 @@ variable "CRAWLER_NAME" {
     default     = "cde-testing-crawler"
 }
 
-variable "BUCKET_ARN" {
+variable "BUCKET_NAME" {
     type        = string
     description = "ARN of the bucket"
-    default     = "arn:aws:s3:::goalposting-s3"
+    default     = "goalposting-s3"
 }
 
 variable "GLUE_DB_NAME" {
