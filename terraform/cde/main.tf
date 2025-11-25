@@ -67,7 +67,7 @@ resource "aws_cloudwatch_event_target" "cde-test-scheduler-ecs-target" {
 }
 
 resource "aws_lambda_permission" "cde-test-scheduler-eventbridge-permission" {
-  statement_id  = "TFAllowEventBridgeInvokeScheduler"
+  statement_id  = "cde-test-statement"
   action        = "lambda:InvokeFunction"
   function_name = data.aws_lambda_function.cde-test-scheduler-lambda.function_name
   principal     = "events.amazonaws.com"
