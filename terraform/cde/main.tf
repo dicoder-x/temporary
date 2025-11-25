@@ -66,8 +66,18 @@ resource "aws_cloudwatch_event_target" "cde-test-scheduler-ecs-target" {
   arn            = data.aws_lambda_function.cde-test-scheduler-lambda.arn
 }
 
+# ───────────────────────────────────────────────
+# Random ID for unique Lambda permission statement_id
+# ───────────────────────────────────────────────
+resource "random_id" "cde_test_lambda_permission_suffix" {
+  byte_length = 4
+}
+
+# ───────────────────────────────────────────────
+# Lambda permission with unique statement_id
+# ───────────────────────────────────────────────
 resource "aws_lambda_permission" "cde-test-scheduler-eventbridge-permission" {
-  statement_id  = "cde-test-statement"
+  statement_id  = "cde-test-statement-${random_id.cde_test_lambda_permission_suffix.hex}"
   action        = "lambda:InvokeFunction"
   function_name = data.aws_lambda_function.cde-test-scheduler-lambda.function_name
   principal     = "events.amazonaws.com"
