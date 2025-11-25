@@ -18,13 +18,11 @@ data "aws_iam_role" "cde-test-scheduler-lambda-exec-role" {
 # Add missing permissions onto the *existing* role
 # ───────────────────────────────────────────────
 
-# CloudWatch Logs already exists, but safe to attach
 resource "aws_iam_role_policy_attachment" "cde-test-scheduler-lambda-basic" {
   role       = data.aws_iam_role.cde-test-scheduler-lambda-exec-role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-# Allow Lambda to manage EventBridge Scheduler schedules
 resource "aws_iam_role_policy" "cde-test-scheduler-lambda-scheduler-access" {
   name = "cde-test-scheduler-lambda-scheduler-access"
   role = data.aws_iam_role.cde-test-scheduler-lambda-exec-role.id
@@ -32,8 +30,8 @@ resource "aws_iam_role_policy" "cde-test-scheduler-lambda-scheduler-access" {
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
-      Effect = "Allow",
-      Action = [
+      Effect   = "Allow",
+      Action   = [
         "scheduler:CreateSchedule",
         "scheduler:DeleteSchedule",
         "scheduler:UpdateSchedule",
@@ -45,13 +43,13 @@ resource "aws_iam_role_policy" "cde-test-scheduler-lambda-scheduler-access" {
 }
 
 # ───────────────────────────────────────────────
-# EventBridge (CloudWatch Events) Bus
+# EventBridge (CloudWatch Events) Bus & Rule
 # ───────────────────────────────────────────────
+
 resource "aws_cloudwatch_event_bus" "cde-test-scheduler-bus" {
   name = "cde-test-scheduler-bus"
 }
 
-# Rule triggered by ECS/dashboard
 resource "aws_cloudwatch_event_rule" "cde-test-scheduler-ecs-rule" {
   name           = "cde-test-scheduler-ecs-rule"
   event_bus_name = aws_cloudwatch_event_bus.cde-test-scheduler-bus.name
@@ -62,16 +60,14 @@ resource "aws_cloudwatch_event_rule" "cde-test-scheduler-ecs-rule" {
   })
 }
 
-# Target → Lambda
 resource "aws_cloudwatch_event_target" "cde-test-scheduler-ecs-target" {
   rule           = aws_cloudwatch_event_rule.cde-test-scheduler-ecs-rule.name
   event_bus_name = aws_cloudwatch_event_bus.cde-test-scheduler-bus.name
   arn            = data.aws_lambda_function.cde-test-scheduler-lambda.arn
 }
 
-# Allow EventBridge to invoke Lambda (MUST HAVE UNIQUE STATEMENT ID!)
 resource "aws_lambda_permission" "cde-test-scheduler-eventbridge-permission" {
-  statement_id  = "TFAllowEventBridgeInvokeScheduler"   # FIXED
+  statement_id  = "TFAllowEventBridgeInvokeScheduler"
   action        = "lambda:InvokeFunction"
   function_name = data.aws_lambda_function.cde-test-scheduler-lambda.function_name
   principal     = "events.amazonaws.com"
@@ -79,7 +75,44 @@ resource "aws_lambda_permission" "cde-test-scheduler-eventbridge-permission" {
 }
 
 # ───────────────────────────────────────────────
-# Daily EventBridge Scheduler Trigger
+# IAM Role for EventBridge Scheduler to invoke Lambda
+# ───────────────────────────────────────────────
+
+resource "aws_iam_role" "cde-test-scheduler-scheduler-role" {
+  name = "cde-test-scheduler-scheduler-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          Service = "scheduler.amazonaws.com"
+        },
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "cde-test-scheduler-scheduler-invoke" {
+  name = "cde-test-scheduler-scheduler-invoke"
+  role = aws_iam_role.cde-test-scheduler-scheduler-role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = "lambda:InvokeFunction",
+        Resource = data.aws_lambda_function.cde-test-scheduler-lambda.arn
+      }
+    ]
+  })
+}
+
+# ───────────────────────────────────────────────
+# EventBridge Scheduler: Daily trigger
 # ───────────────────────────────────────────────
 resource "aws_scheduler_schedule" "cde-test-scheduler-daily" {
   name        = "cde-test-scheduler-daily-trigger"
@@ -93,7 +126,7 @@ resource "aws_scheduler_schedule" "cde-test-scheduler-daily" {
 
   target {
     arn      = data.aws_lambda_function.cde-test-scheduler-lambda.arn
-    role_arn = data.aws_iam_role.cde-test-scheduler-lambda-exec-role.arn
+    role_arn = aws_iam_role.cde-test-scheduler-scheduler-role.arn
     input    = jsonencode({ source = "daily-trigger" })
   }
 }
