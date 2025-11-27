@@ -81,6 +81,44 @@ data "aws_iam_policy_document" "a1234-test-ecs-task-athena" {
   }
 }
 
+resource "aws_iam_role_policy" "a1234-test-ecs-task-lambda-scheduler-access" {
+  name = "a1234-test-ecs-task-lambda-scheduler-access"
+  role = aws_iam_role.a1234-test-ecs-task-role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "lambda:InvokeFunction"
+        ],
+        Resource = aws_lambda_function.a1234-test-scheduler-lambda.arn
+      },
+
+      {
+        Effect = "Allow",
+        Action = [
+          "scheduler:CreateSchedule",
+          "scheduler:UpdateSchedule",
+          "scheduler:DeleteSchedule",
+          "scheduler:GetSchedule"
+        ],
+        Resource = "*"
+      },
+
+      # Allow ECS to provide the EventBridge Invoke Role to Scheduler
+      {
+        Effect = "Allow",
+        Action = [
+          "iam:PassRole"
+        ],
+        Resource = aws_iam_role.a1234-test-scheduler-eventbridge-invoke-role.arn
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role_policy" "a1234-test-ecs-task-athena-policy" {
   name   = "a1234-test-ecs-task-athena"
   role   = aws_iam_role.a1234-test-ecs-task-role.id
