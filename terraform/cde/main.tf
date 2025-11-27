@@ -4,18 +4,18 @@ provider "aws" {
 }
 
 # CLOUDWATCH LOG GROUP
-resource "aws_cloudwatch_log_group" "goalposting-ecs-log" {
-  name              = "/ecs/goalposting-streamlit-dashboard"
+resource "aws_cloudwatch_log_group" "a1234-test-ecs-log" {
+  name              = "/ecs/a1234-test-streamlit-dashboard"
   retention_in_days = 7
 }
 
 # ECS CLUSTER
-resource "aws_ecs_cluster" "goalposting-ecs-cluster" {
-  name = "goalposting-ecs-cluster"
+resource "aws_ecs_cluster" "a1234-test-ecs-cluster" {
+  name = "a1234-test-ecs-cluster"
 }
 
 # IAM ASSUME ROLE
-data "aws_iam_policy_document" "goalposting-ecs-task-execution-assume" {
+data "aws_iam_policy_document" "a1234-test-ecs-task-execution-assume" {
   statement {
     actions = ["sts:AssumeRole"]
     principals {
@@ -26,25 +26,25 @@ data "aws_iam_policy_document" "goalposting-ecs-task-execution-assume" {
 }
 
 # TASK EXECUTION ROLE
-resource "aws_iam_role" "goalposting-ecs-task-execution" {
-  name               = "goalposting-ecs-task-exec-role"
-  assume_role_policy = data.aws_iam_policy_document.goalposting-ecs-task-execution-assume.json
+resource "aws_iam_role" "a1234-test-ecs-task-execution" {
+  name               = "a1234-test-ecs-task-exec-role"
+  assume_role_policy = data.aws_iam_policy_document.a1234-test-ecs-task-execution-assume.json
 }
 
 # EXECUTION ROLE POLICY ATTACHMENT
-resource "aws_iam_role_policy_attachment" "goalposting-ecs-execution-policy" {
-  role       = aws_iam_role.goalposting-ecs-task-execution.name
+resource "aws_iam_role_policy_attachment" "a1234-test-ecs-execution-policy" {
+  role       = aws_iam_role.a1234-test-ecs-task-execution.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
 # TASK ROLE (permissions for the container)
-resource "aws_iam_role" "goalposting-ecs-task-role" {
-  name               = "goalposting-ecs-task-role"
-  assume_role_policy = data.aws_iam_policy_document.goalposting-ecs-task-execution-assume.json
+resource "aws_iam_role" "a1234-test-ecs-task-role" {
+  name               = "a1234-test-ecs-task-role"
+  assume_role_policy = data.aws_iam_policy_document.a1234-test-ecs-task-execution-assume.json
 }
 
 # ATHENA + S3 + GLUE PERMISSIONS
-data "aws_iam_policy_document" "goalposting-ecs-task-athena" {
+data "aws_iam_policy_document" "a1234-test-ecs-task-athena" {
   statement {
     actions = [
       "athena:StartQueryExecution",
@@ -81,15 +81,15 @@ data "aws_iam_policy_document" "goalposting-ecs-task-athena" {
   }
 }
 
-resource "aws_iam_role_policy" "goalposting-ecs-task-athena-policy" {
-  name   = "goalposting-ecs-task-athena"
-  role   = aws_iam_role.goalposting-ecs-task-role.id
-  policy = data.aws_iam_policy_document.goalposting-ecs-task-athena.json
+resource "aws_iam_role_policy" "a1234-test-ecs-task-athena-policy" {
+  name   = "a1234-test-ecs-task-athena"
+  role   = aws_iam_role.a1234-test-ecs-task-role.id
+  policy = data.aws_iam_policy_document.a1234-test-ecs-task-athena.json
 }
 
 # SECURITY GROUP
-resource "aws_security_group" "goalposting-ecs-tasks-sg" {
-  name        = "goalposting-ecs-tasks-sg"
+resource "aws_security_group" "a1234-test-ecs-tasks-sg" {
+  name        = "a1234-test-ecs-tasks-sg"
   description = "Security group for ECS fargate tasks"
   vpc_id      = var.VPC_ID
 
@@ -108,23 +108,23 @@ resource "aws_security_group_rule" "ecs_inbound_http" {
   to_port           = 8501
   protocol          = "tcp"
   cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.goalposting-ecs-tasks-sg.id
+  security_group_id = aws_security_group.a1234-test-ecs-tasks-sg.id
 }
 
 # TASK DEFINITION
-resource "aws_ecs_task_definition" "goalposting-streamlit-task" {
-  family                   = "goalposting-streamlit-dashboard"
+resource "aws_ecs_task_definition" "a1234-test-streamlit-task" {
+  family                   = "a1234-test-streamlit-dashboard"
   cpu                      = var.CPU
   memory                   = var.MEMORY_SIZE
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
 
-  execution_role_arn = aws_iam_role.goalposting-ecs-task-execution.arn
-  task_role_arn      = aws_iam_role.goalposting-ecs-task-role.arn
+  execution_role_arn = aws_iam_role.a1234-test-ecs-task-execution.arn
+  task_role_arn      = aws_iam_role.a1234-test-ecs-task-role.arn
 
   container_definitions = jsonencode([
     {
-      name      = "goalposting-streamlit-dashboard"
+      name      = "a1234-test-streamlit-dashboard"
       image     = var.DASHBOARD_IMAGE_URI
       essential = true
 
@@ -143,9 +143,9 @@ resource "aws_ecs_task_definition" "goalposting-streamlit-task" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          awslogs-group         = aws_cloudwatch_log_group.goalposting-ecs-log.name
+          awslogs-group         = aws_cloudwatch_log_group.a1234-test-ecs-log.name
           awslogs-region        = "eu-west-2"
-          awslogs-stream-prefix = "goalposting-ecs"
+          awslogs-stream-prefix = "a1234-test-ecs"
         }
       }
     }
@@ -153,16 +153,16 @@ resource "aws_ecs_task_definition" "goalposting-streamlit-task" {
 }
 
 # ECS SERVICE
-resource "aws_ecs_service" "goalposting-streamlit-service" {
-  name            = "goalposting-streamlit-dashboard-service"
-  cluster         = aws_ecs_cluster.goalposting-ecs-cluster.id
-  task_definition = aws_ecs_task_definition.goalposting-streamlit-task.arn
+resource "aws_ecs_service" "a1234-test-streamlit-service" {
+  name            = "a1234-test-streamlit-dashboard-service"
+  cluster         = aws_ecs_cluster.a1234-test-ecs-cluster.id
+  task_definition = aws_ecs_task_definition.a1234-test-streamlit-task.arn
   desired_count   = 1
   launch_type     = "FARGATE"
 
   network_configuration {
     subnets         = var.SUBNET_IDs
-    security_groups = [aws_security_group.goalposting-ecs-tasks-sg.id]
+    security_groups = [aws_security_group.a1234-test-ecs-tasks-sg.id]
     assign_public_ip = true
   }
 
@@ -171,9 +171,9 @@ resource "aws_ecs_service" "goalposting-streamlit-service" {
   }
 }
 
-resource "aws_iam_role_policy" "goalposting-ecs-task-lambda-scheduler-access" {
-  name = "goalposting-ecs-task-lambda-scheduler-access"
-  role = aws_iam_role.goalposting-ecs-task-role.id
+resource "aws_iam_role_policy" "a1234-test-ecs-task-lambda-scheduler-access" {
+  name = "a1234-test-ecs-task-lambda-scheduler-access"
+  role = aws_iam_role.a1234-test-ecs-task-role.id
 
   policy = jsonencode({
     Version = "2012-10-17",
@@ -183,7 +183,7 @@ resource "aws_iam_role_policy" "goalposting-ecs-task-lambda-scheduler-access" {
         Action = [
           "lambda:InvokeFunction"
         ],
-        Resource = aws_lambda_function.goalposting-scheduler-lambda.arn
+        Resource = aws_lambda_function.a1234-test-scheduler-lambda.arn
       },
 
       {
@@ -203,7 +203,7 @@ resource "aws_iam_role_policy" "goalposting-ecs-task-lambda-scheduler-access" {
         Action = [
           "iam:PassRole"
         ],
-        Resource = aws_iam_role.goalposting-scheduler-eventbridge-invoke-role.arn
+        Resource = aws_iam_role.a1234-test-scheduler-eventbridge-invoke-role.arn
       }
     ]
   })
